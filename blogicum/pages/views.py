@@ -1,11 +1,25 @@
 from django.shortcuts import render
+from django.views.generic import TemplateView
 
 
-def rules(request):
-    template = 'pages/rules.html'
-    return render(request, template)
+class AboutPageView(TemplateView):
+    template_name = 'pages/about.html'
 
 
-def about(request):
-    template = 'pages/about.html'
-    return render(request, template)
+class RulesPageView(TemplateView):
+    template_name = 'pages/rules.html'
+
+
+# 404
+def page_not_found(request, exception=''):
+    return render(request, 'pages/404.html', status=404)
+
+
+# 403
+def csrf_failure(request, exception='', reason=''):
+    return render(request, 'pages/403csrf.html', status=403)
+
+
+# 500
+def handler500(request):
+    return render(request, 'pages/500.html', status=500)

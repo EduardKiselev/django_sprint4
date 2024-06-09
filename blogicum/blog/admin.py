@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from blog.models import Category
+from blog.models import Category, Location, Post, Comment
 from blog.models import Location
 from blog.models import Post
 
@@ -46,7 +46,13 @@ class PostAdmin(admin.ModelAdmin):
     list_filter = ('is_published', 'author', 'location', 'category')
 
 
+class CommentAdmin(admin.ModelAdmin):
+    list_display = ('text', 'author', 'post', 'created_at')
+    search_fields = ('name',)
+
+
 admin.site.empty_value_display = 'Не задано'
 admin.site.register(Category, CategoryAdmin)
 admin.site.register(Location, LocationAdmin)
 admin.site.register(Post, PostAdmin)
+admin.site.register(Comment, CommentAdmin)

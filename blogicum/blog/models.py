@@ -5,11 +5,7 @@ from django.contrib.auth import get_user_model
 User = get_user_model()
 
 
-
-
 class PublishedModel(models.Model):
-    """Абстрактная модель. Добавляет флаг is_published и created_at."""
-
     is_published = models.BooleanField(
         default=True,
         verbose_name='Опубликовано',
@@ -48,6 +44,21 @@ class Location(PublishedModel):
         return self.name
 
 
+class Comment(models.Model):
+    text = models.TextField('Текст')
+    author = models.ForeignKey(User, on_delete=models.CASCADE,
+                               blank=True, null=True,
+                               verbose_name='Автор комментария')
+    post = models.ForeignKey('Post', on_delete=models.CASCADE,
+                             verbose_name='Комментарии', null=True)
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Дата и время создания')
+    
+    def __str__(self):
+        return self.text
+
+
 class Post(PublishedModel):
     title = models.CharField(max_length=256, verbose_name='Заголовок')
     text = models.TextField(verbose_name='Текст')
@@ -55,6 +66,7 @@ class Post(PublishedModel):
         verbose_name='Дата и время публикации',
         help_text='Если установить дату и время в будущем — можно \
 делать отложенные публикации.')
+    image = models.ImageField('Картинка', blank=True)
     author = models.ForeignKey(User, on_delete=models.CASCADE,
                                verbose_name='Автор публикации')
     location = models.ForeignKey(Location, on_delete=models.SET_NULL,
@@ -70,11 +82,3 @@ class Post(PublishedModel):
 
     def __str__(self):
         return self.title
-
-
-class Profile(models.Model):
-    username = models.ForeignKey(User, on_delete=models.CASCADE,
-                                 verbose_name='Ник пользователя')
-    date_joined = models.DateField('Дата регистрации')
-    first_name = models.CharField('Имя', max_length=20)
-    second_name = models.CharField('Фамилия', max_length=20)

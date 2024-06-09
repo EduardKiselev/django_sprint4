@@ -332,6 +332,8 @@ def _test_edit_post(
     item_to_edit = comment_adapter.post
     post_adapter = PostModelAdapter(item_to_edit)
     post_url = f"/posts/{item_to_edit.id}/"
+
+    print('~~~~~~~~~~~~~',post_url, user_client)
     response_on_commented = user_client.get(post_url)
     edit_url, del_url = find_edit_and_delete_urls(
         post_adapter,
