@@ -1,6 +1,6 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from blog.models import Post, Category, Comment, User
-from blog.forms import CommentForm, ProfileForm
+from blog.forms import CommentForm, ProfileForm, PostForm
 from datetime import datetime
 from django.views.generic import DetailView, DeleteView, UpdateView, CreateView
 from django.urls import reverse_lazy
@@ -8,6 +8,7 @@ from django.core.paginator import Paginator
 from django.db.models import Count
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.decorators import login_required
+from pages.views import page_not_found
 
 
 class OnlyAuthorMixin(UserPassesTestMixin):
@@ -87,7 +88,17 @@ def index(request):
 class PostDetailView(DetailView):
     model = Post
     template_name = 'blog/detail.html'
-    pk_url_kwarg = 'id'
+    pk_url_kwarg = 'post_id'
+
+    def dispatch(self, request, *args, **kwargs):
+        instance = get_object_or_404(Post, id=self.kwargs[self.pk_url_kwarg])
+        if instance.author == request.user or (
+           instance.is_published
+           and instance.category.is_published
+           and instance.pub_date.timestamp() < datetime.now().timestamp()):
+            return super().dispatch(request, *args, **kwargs)
+        else:
+            return page_not_found(request)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -134,18 +145,22 @@ def category_posts(request, category_slug):
 class PostDeleteView(OnlyAuthorMixin, DeleteView):
     model = Post
     template_name = 'blog/create.html'
+    pk_url_kwarg = 'post_id'
     success_url = reverse_lazy('blog:index')
 
 
-class PostUpdateView(OnlyAuthorMixin, UpdateView):
-    model = Post
-    template_name = 'blog/create.html'
-    fields = ['title', 'text', 'pub_date', 'location', 'category', 'image']
-
-    def get_success_url(self):
-        print(self.kwargs.get(self.pk_url_kwarg))
-        return reverse_lazy('blog:post_detail',
-                            args=(self.kwargs.get(self.pk_url_kwarg),))
+def post_update(request, post_id):
+    template = 'blog/create.html'
+    instance = get_object_or_404(Post, id=post_id)
+    if instance.author == request.user:
+        form = PostForm(request.POST or None, instance=instance)
+        context = {'form': form}
+        if form.is_valid():
+            form.save()
+            return redirect('blog:post_detail', post_id)
+        return render(request, template, context)
+    else:
+        return redirect('blog:post_detail', post_id)
 
 
 class PostCreateView(LoginRequiredMixin, CreateView):
@@ -168,7 +183,7 @@ class CommentDeleteView(OnlyAuthorMixin, DeleteView):
 
     def get_success_url(self):
         return reverse_lazy('blog:post_detail',
-                            args=(self.kwargs.get('id'),))
+                            args=(self.kwargs.get('post_id'),))
 
 
 class CommentUpdateView(OnlyAuthorMixin, UpdateView):
@@ -178,13 +193,14 @@ class CommentUpdateView(OnlyAuthorMixin, UpdateView):
 
     def get_success_url(self):
         return reverse_lazy('blog:post_detail',
-                            args=(self.kwargs.get('id'),))
+                            args=(self.kwargs.get('post_id'),))
 
 
 class CommentCreateView(LoginRequiredMixin, CreateView):
     model = Comment
     template_name = 'blog/comment.html'
     form_class = CommentForm
+    pk_url_kwarg = 'post_id'
 
     def get_success_url(self):
         return reverse_lazy('blog:post_detail',
@@ -194,5 +210,4 @@ class CommentCreateView(LoginRequiredMixin, CreateView):
         form.instance.post = get_object_or_404(
             Post, id=self.kwargs.get(self.pk_url_kwarg))
         form.instance.author = self.request.user
-
         return super().form_valid(form)
