@@ -1,8 +1,6 @@
 from django.contrib import admin
 
 from blog.models import Category, Location, Post, Comment
-from blog.models import Location
-from blog.models import Post
 
 
 class LocationInline(admin.TabularInline):
@@ -14,6 +12,7 @@ class CategoryInline(admin.StackedInline):
     extra = 0
 
 
+@admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
     inlines = (CategoryInline,)
     list_display = ('title', 'slug', 'is_published', 'created_at')
@@ -22,6 +21,7 @@ class CategoryAdmin(admin.ModelAdmin):
     list_filter = ('is_published',)
 
 
+@admin.register(Location)
 class LocationAdmin(admin.ModelAdmin):
     inlines = (LocationInline,)
     list_display = ('name', 'is_published', 'created_at')
@@ -30,6 +30,7 @@ class LocationAdmin(admin.ModelAdmin):
     list_filter = ('is_published',)
 
 
+@admin.register(Post)
 class PostAdmin(admin.ModelAdmin):
     list_display = (
         'title',
@@ -46,13 +47,10 @@ class PostAdmin(admin.ModelAdmin):
     list_filter = ('is_published', 'author', 'location', 'category')
 
 
+@admin.register(Comment)
 class CommentAdmin(admin.ModelAdmin):
     list_display = ('text', 'author', 'post', 'created_at')
     search_fields = ('name',)
 
 
 admin.site.empty_value_display = 'Не задано'
-admin.site.register(Category, CategoryAdmin)
-admin.site.register(Location, LocationAdmin)
-admin.site.register(Post, PostAdmin)
-admin.site.register(Comment, CommentAdmin)

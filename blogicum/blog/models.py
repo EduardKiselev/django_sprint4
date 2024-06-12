@@ -47,9 +47,11 @@ class Location(PublishedModel):
 class Comment(models.Model):
     text = models.TextField('Текст')
     author = models.ForeignKey(User, on_delete=models.CASCADE,
-                               verbose_name='Автор комментария')
+                               verbose_name='Автор комментария',
+                               related_name='comment')
     post = models.ForeignKey('Post', on_delete=models.CASCADE,
-                             verbose_name='Комментарии', null=True)
+                             verbose_name='Комментарии', null=True,
+                             related_name='comment')
     created_at = models.DateTimeField(
         auto_now_add=True,
         verbose_name='Дата и время создания')

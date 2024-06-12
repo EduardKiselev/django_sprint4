@@ -1,6 +1,7 @@
+from django.http.response import HttpResponseRedirect
 from django.shortcuts import render, get_object_or_404, redirect
 from blog.models import Post, Category, Comment, User
-from blog.forms import CommentForm, ProfileForm, PostForm
+from blog.forms import CommentForm, ProfileForm
 from datetime import datetime
 from django.views.generic import DetailView, DeleteView, UpdateView, CreateView
 from django.urls import reverse_lazy
@@ -149,18 +150,18 @@ class PostDeleteView(OnlyAuthorMixin, DeleteView):
     success_url = reverse_lazy('blog:index')
 
 
-def post_update(request, post_id):
-    template = 'blog/create.html'
-    instance = get_object_or_404(Post, id=post_id)
-    if instance.author == request.user:
-        form = PostForm(request.POST or None, instance=instance)
-        context = {'form': form}
-        if form.is_valid():
-            form.save()
-            return redirect('blog:post_detail', post_id)
-        return render(request, template, context)
-    else:
-        return redirect('blog:post_detail', post_id)
+class PostUpdateView(OnlyAuthorMixin, UpdateView):
+    model = Post
+    fields = ['title', 'text', 'pub_date', 'location', 'category', 'image']
+    pk_url_kwarg = 'post_id'
+    template_name = 'blog/create.html'
+
+    def handle_no_permission(self) -> HttpResponseRedirect:
+        return redirect('blog:post_detail', self.kwargs[self.pk_url_kwarg])
+
+    def get_success_url(self):
+        return reverse_lazy('blog:post_detail',
+                            args=(self.kwargs.get('post_id'),))
 
 
 class PostCreateView(LoginRequiredMixin, CreateView):
